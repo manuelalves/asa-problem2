@@ -36,7 +36,40 @@ class Graph{
         vector<list<int> > criticalPoints;
         // Vector that contais the graph nodes
         vector<UserNode*> nodesVector;
+    
+        vector<int > parentsList;
+        vector<vector<int> > flowPassed;
 };
+
+int bfs(int startNode, int finishNode){
+    return 0;
+}
+
+int edmondsKarp(int startNode, int finishNode, Graph* g){
+    
+    int maxFlow=0;
+    
+    while (true) {
+        int flow=bfs(startNode, finishNode);
+        
+        if(flow == 0)
+            break;
+        
+        maxFlow += flow;
+        
+        int currentNode = finishNode;
+        
+        while (currentNode != startNode) {
+            int previousNode = g->parentsList[currentNode];
+            g->flowPassed[previousNode][currentNode] += flow;
+            g->flowPassed[currentNode][previousNode] -= flow;
+            currentNode=previousNode;
+        }
+    }
+    
+    return maxFlow;
+}
+
 
 int main(){
     
@@ -64,6 +97,8 @@ int main(){
     graph->numberConnections = m;
     // allocates a vector with number of vertices (number of points)
     graph->nodesVector.reserve(n);
+    
+    graph->parentsList.reserve(n);
     
     // initialize each node of the graph
     for(int i = 0; i < n; i++){
