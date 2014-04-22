@@ -1,11 +1,11 @@
 /*
-
-Grupo 108
-
-70179 - Manuel Alves     [manuelalves@tecnico.ulisboa.pt]
-70298 - Jessica Ribeiro  [jessica.ribeiro@tecnico.ulisboa.pt]
-
-*/
+ 
+ Grupo 108
+ 
+ 70179 - Manuel Alves     [manuelalves@tecnico.ulisboa.pt]
+ 70298 - Jessica Ribeiro  [jessica.ribeiro@tecnico.ulisboa.pt]
+ 
+ */
 
 #include <iostream>
 #include <list>
@@ -13,63 +13,131 @@ Grupo 108
 #include <algorithm>
 #include <stack>
 #include <stdio.h>
+#include <limits.h>
+#include <queue>
 
 using namespace std;
 
 class UserNode{
-    public:
-        // node id
-        int id;
-        // List with the connections nodes
-        list<int> connectionList;
+public:
+    // node id
+    int id;
+    // List with the connections nodes
+    vector<int > connectionList;
+};
+
+class CriticalNode{
+public:
+    vector<int > input;
 };
 
 class Graph{
-    public:
-        // number of points
-        int numberPoints;
-        // number of connections
-        int numberConnections;
-        // number of problems
-        int numberProblems;
-        // list of critical points
-        vector<list<int> > criticalPoints;
-        // Vector that contais the graph nodes
-        vector<UserNode*> nodesVector;
-    
-        vector<int > parentsList;
-        vector<vector<int> > flowPassed;
+public:
+    // number of points
+    int numberPoints;
+    // number of connections
+    int numberConnections;
+    // number of problems
+    int numberProblems;
+    // list of critical points
+    vector<CriticalNode*> criticalPoints;
+    // Vector that contais the graph nodes
+    vector<UserNode*> nodesVector;
 };
 
-int bfs(int startNode, int finishNode){
-    return 0;
+bool bfs(Graph* rGraph, int source, int sink, int parent[]){
+    bool visited[rGraph->numberPoints];
+    memset(visited, 0, sizeof(visited));
+    
+    queue <int> q;
+    q.push(source);
+    visited[source] = true;
+    parent[source] = -1;
+    
+    while(!q.empty()){
+        int u = q.front();
+        q.pop();
+        
+        for (int v=0; v<rGraph->numberPoints; v++) {
+            if (visited[v]==false && rGraph->nodesVector[u]->connectionList[v]>0) {
+                q.push(v);
+                parent[v]=u;
+                visited[v]=true;
+            }
+        }
+    }
+    return (visited[sink] == true);
 }
 
-int edmondsKarp(int startNode, int finishNode, Graph* g){
+
+
+int fordFulkerson(Graph* g, int source, int sink){
+    int u;
+    int v;
     
-    int maxFlow=0;
+    Graph* rGraph = new Graph();
     
-    while (true) {
-        int flow=bfs(startNode, finishNode);
+    rGraph->numberPoints = g->numberPoints;
+    rGraph->numberConnections = g->numberConnections;
+    rGraph->nodesVector.reserve(g->numberPoints);
+    
+    for(int i = 0; i < g->numberPoints; i++){
         
-        if(flow == 0)
-            break;
+        // creates a new node
+        UserNode* node = new UserNode();
         
-        maxFlow += flow;
+        // add node to the nodesVector of graph
+        rGraph->nodesVector.push_back(node);
         
-        int currentNode = finishNode;
+        // sets the id of node
+        rGraph->nodesVector[i]->id = g->nodesVector[i]->id;
         
-        while (currentNode != startNode) {
-            int previousNode = g->parentsList[currentNode];
-            g->flowPassed[previousNode][currentNode] += flow;
-            g->flowPassed[currentNode][previousNode] -= flow;
-            currentNode=previousNode;
+        rGraph->nodesVector[i]->connectionList.reserve(g->numberPoints);
+        
+        for(int j = 0; j < g->numberPoints; j++){
+            rGraph->nodesVector[i]->connectionList[j] = 0;
+            
+        }
+        
+    }
+    
+    // for each number of connections
+    for (int j = 0; j < g->numberPoints; j++){
+        
+        for (int m = 0; m < g->numberConnections; m++) {
+            rGraph->nodesVector[j]->connectionList[m] = g->nodesVector[j]->connectionList[m];
+            
         }
     }
     
-    return maxFlow;
+    
+    
+    int parent[g->numberPoints];
+    
+    int max_flow = 0;
+    
+    while(bfs(rGraph, source, sink, parent)){
+        int path_flow = INT_MAX;
+        
+        for(v=sink; v!=source; v=parent[v]){
+            u=parent[v];
+            path_flow=min(path_flow, rGraph->nodesVector[u]->connectionList[v]);
+        }
+        
+        for(v=sink; v!=source; v=parent[v]){
+            u=parent[v];
+            rGraph->nodesVector[u]->connectionList[v] -= path_flow;
+            rGraph->nodesVector[v]->connectionList[u] += path_flow;
+            
+        }
+        
+        max_flow += path_flow;
+        
+    }
+    
+    return max_flow;
+    
 }
-
 
 int main(){
     
@@ -84,7 +152,7 @@ int main(){
     int h = 0;
     // number of critical points on this line (1 ≤ k ≤ n)
     int k = 0;
-
+    
     // read first line input
     scanf("%d %d", &n, &m);
     
@@ -98,7 +166,7 @@ int main(){
     // allocates a vector with number of vertices (number of points)
     graph->nodesVector.reserve(n);
     
-    graph->parentsList.reserve(n);
+    
     
     // initialize each node of the graph
     for(int i = 0; i < n; i++){
@@ -113,6 +181,14 @@ int main(){
         
         // sets the id of node
         graph->nodesVector[i]->id = (id_aux + 1);
+        
+        graph->nodesVector[i]->connectionList.reserve(n);
+        
+        for(int j = 0; j < n; j++){
+            graph->nodesVector[i]->connectionList[j] = 0;
+            
+        }
+        
     }
     
     // for each number of connections
@@ -122,40 +198,60 @@ int main(){
         scanf ("%d %d",&u, &v);
         
         //adds connection point to the connectionList of the node
-        graph->nodesVector[u]->connectionList.push_back(v);
-        graph->nodesVector[v]->connectionList.push_back(u);
+        graph->nodesVector[u]->connectionList[v] = 1;
+        graph->nodesVector[v]->connectionList[u] = 1;
     }
     
     // read the number of problems
     scanf("%d", &h);
     
-    // allocates a vector with number of problems
     graph->criticalPoints.reserve(h);
     
     for (int y = 0; y < h; y++) {
         
-        // list of critical points to insert in the graph
-        list<int > insertCriticalPoints;
+        CriticalNode* node = new CriticalNode();
+        
+        graph->criticalPoints.push_back(node);
+        
         
         // gets number of critical points on this line
         scanf ("%d", &k);
         
+        graph->criticalPoints[y]->input.reserve(k);
+        
+        for(int j = 0; j <  k; j++){
+            graph->criticalPoints[y]->input[j] = 0;
+            
+        }
+        graph->criticalPoints[y]->input[0] = k;
+        
         // read line of critival points
-        for (int auxY=0; auxY < k; auxY++) {
+        for (int auxY=1; auxY <= k; auxY++) {
             int auxInsert = 0;
             
             // read each critial point
             scanf("%d", &auxInsert);
             
+            graph->criticalPoints[y]->input[auxY] = auxInsert;
+            
+            
+            
             // insert critical point on the insertCriticalPoints
-            insertCriticalPoints.push_back(auxInsert);
+            
         }
         
         // insert the list of critical points on the graph
-        graph->criticalPoints.push_back(insertCriticalPoints);
+        
     }
-
     
     // output - TO DO
-    cout << "\n";
+    
+    
+    
+    
+    cout << fordFulkerson(graph, graph->criticalPoints[0]->input[1], graph->criticalPoints[0]->input[2]) << "\n";
+    
+    cout << fordFulkerson(graph, graph->criticalPoints[1]->input[1], graph->criticalPoints[1]->input[2]) << "\n";
+    
+    cout << fordFulkerson(graph, graph->criticalPoints[2]->input[1], graph->criticalPoints[2]->input[2]) << "\n";
 }
