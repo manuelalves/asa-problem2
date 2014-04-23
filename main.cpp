@@ -107,7 +107,7 @@ int fordFulkerson(Graph* g, int source, int sink){
         for (int m = 0; m < g->numberConnections; m++) {
             rGraph->nodesVector[j]->connectionList[m] = g->nodesVector[j]->connectionList[m];
             
-        }
+        } 
     }
     
     
