@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <stack>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 #include <queue>
 
@@ -44,6 +45,41 @@ public:
     // Vector that contais the graph nodes
     vector<UserNode*> nodesVector;
 };
+
+
+Graph* copyGraph(Graph* g, Graph* copy){
+    copy->numberPoints = g->numberPoints;
+    copy->numberConnections = g->numberConnections;
+    copy->nodesVector.reserve(g->numberPoints);
+    
+    for(int i = 0; i < g->numberPoints; i++){
+        
+        // creates a new node
+        UserNode* node = new UserNode();
+        
+        // add node to the nodesVector of graph
+        copy->nodesVector.push_back(node);
+        
+        // sets the id of node
+        copy->nodesVector[i]->id = g->nodesVector[i]->id;
+        
+        copy->nodesVector[i]->connectionList.reserve(g->numberPoints);
+        
+        for(int j = 0; j < g->numberPoints; j++){
+            copy->nodesVector[i]->connectionList.push_back(0);
+        }
+        
+        for (int m = 0; m < g->numberPoints; m++) {
+            copy->nodesVector[i]->connectionList[m] = g->nodesVector[i]->connectionList[m];
+            
+        }
+        
+        
+    }
+    
+    return copy;
+    
+}
 
 bool bfs(Graph* rGraph, int source, int sink, int parent[]){
     bool visited[rGraph->numberPoints];
@@ -77,39 +113,7 @@ int fordFulkerson(Graph* g, int source, int sink){
     
     Graph* rGraph = new Graph();
     
-    rGraph->numberPoints = g->numberPoints;
-    rGraph->numberConnections = g->numberConnections;
-    rGraph->nodesVector.reserve(g->numberPoints);
-    
-    for(int i = 0; i < g->numberPoints; i++){
-        
-        // creates a new node
-        UserNode* node = new UserNode();
-        
-        // add node to the nodesVector of graph
-        rGraph->nodesVector.push_back(node);
-        
-        // sets the id of node
-        rGraph->nodesVector[i]->id = g->nodesVector[i]->id;
-        
-        rGraph->nodesVector[i]->connectionList.reserve(g->numberPoints);
-        
-        for(int j = 0; j < g->numberPoints; j++){
-            rGraph->nodesVector[i]->connectionList[j] = 0;
-            
-        }
-        
-    }
-    
-    // for each number of connections
-    for (int j = 0; j < g->numberPoints; j++){
-        
-        for (int m = 0; m < g->numberConnections; m++) {
-            rGraph->nodesVector[j]->connectionList[m] = g->nodesVector[j]->connectionList[m];
-            
-        } 
-    }
-    
+    copyGraph(g, rGraph);
     
     
     int parent[g->numberPoints];
@@ -140,6 +144,7 @@ int fordFulkerson(Graph* g, int source, int sink){
 }
 
 int main(){
+    
     
     // number of points
     int n = 0;
@@ -180,14 +185,14 @@ int main(){
         graph->nodesVector.push_back(node);
         
         // sets the id of node
-        graph->nodesVector[i]->id = (id_aux + 1);
+        graph->nodesVector[i]->id = (id_aux);
         
         graph->nodesVector[i]->connectionList.reserve(n);
         
         for(int j = 0; j < n; j++){
-            graph->nodesVector[i]->connectionList[j] = 0;
-            
+            graph->nodesVector[i]->connectionList.push_back(0);
         }
+        
         
     }
     
@@ -219,8 +224,8 @@ int main(){
         
         graph->criticalPoints[y]->input.reserve(k);
         
-        for(int j = 0; j <  k; j++){
-            graph->criticalPoints[y]->input[j] = 0;
+        for(int j = 0; j <=  k; j++){
+            graph->criticalPoints[y]->input.push_back(0);
             
         }
         graph->criticalPoints[y]->input[0] = k;
@@ -246,12 +251,16 @@ int main(){
     
     // output - TO DO
     
-    
-    
-    
-    cout << fordFulkerson(graph, graph->criticalPoints[0]->input[1], graph->criticalPoints[0]->input[2]) << "\n";
-    
-    cout << fordFulkerson(graph, graph->criticalPoints[1]->input[1], graph->criticalPoints[1]->input[2]) << "\n";
-    
-    cout << fordFulkerson(graph, graph->criticalPoints[2]->input[1], graph->criticalPoints[2]->input[2]) << "\n";
+    for (int out=0; out<h; out++) {
+        if (graph->criticalPoints[out]->input[0] == 2) {
+            cout << fordFulkerson(graph, graph->criticalPoints[out]->input[1], graph->criticalPoints[out]->input[2]) << "\n";
+        }
+        if(graph->criticalPoints[out]->input[0] > 2) {
+            int outAux = fordFulkerson(graph, graph->criticalPoints[out]->input[1], graph->criticalPoints[out]->input[2]);
+            for (int i = 3; i<=graph->criticalPoints[out]->input[0]; i++) {
+                outAux = min(outAux, fordFulkerson(graph, graph->criticalPoints[out]->input[1], graph->criticalPoints[out]->input[i]));
+            }
+            cout << outAux << "\n";
+        }
+    }
 }
