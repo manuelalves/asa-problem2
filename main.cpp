@@ -45,17 +45,23 @@ Graph* copyGraph(Graph* g, Graph* copy){
     copy->numberPoints = g->numberPoints;
     copy->numberConnections = g->numberConnections;
     
+    vector<vector<pair<int, int> > > mapInit(g->numberPoints);
+    copy->map = mapInit;
+    
     for(int i = 0; i < g->numberPoints; i++){
         
-        vector<vector<pair<int, int> > > mapInit(g->numberPoints);
         
-        copy->map = mapInit;
+        
         
         
         // for each number of connections
-        for (int j = 0; j < g->numberConnections; j++){
+        for (unsigned int j = 0; j < g->map[i].size(); j++){
             
-            copy->map[i][j] = g->map[i][j];
+            
+            
+            // copy->map[i][j].first=g->map[i][j].first;
+            // copy->map[i][j].second=g->map[i][j].second;
+            copy->map[i].push_back(make_pair(g->map[i][j].first, g->map[i][j].second));
         }
     }
     
@@ -76,8 +82,13 @@ bool bfs(Graph* rGraph, int source, int sink, int parent[]){
         int u = q.front();
         q.pop();
         
-        for (int v=0; v<rGraph->numberPoints; v++) {
-            if (visited[v]==false && rGraph->map[u][v].second>0) {
+        
+        for (unsigned int pos = 0; pos<rGraph->map[u].size(); pos++) {
+            
+            int v = rGraph->map[u][pos].first;
+            
+            if (visited[v]==false && rGraph->map[u][pos].second>0) {
+                
                 q.push(v);
                 parent[v]=u;
                 visited[v]=true;
@@ -107,13 +118,38 @@ int fordFulkerson(Graph* g, int source, int sink){
         
         for(v=sink; v!=source; v=parent[v]){
             u=parent[v];
-            path_flow=min(path_flow, rGraph->map[u][v].second);
+            
+            for(unsigned int i = 0; i< rGraph->map[u].size(); i++){
+                int elem1 = rGraph->map[u][i].first;
+                if(elem1 == v){
+                    
+                    path_flow=min(path_flow, rGraph->map[u][i].second);
+                }
+            }
+            
+            
+            
         }
         
         for(v=sink; v!=source; v=parent[v]){
             u=parent[v];
-            rGraph->map[u][v].second -= path_flow;
-            rGraph->map[v][u].second += path_flow;
+            
+            for(unsigned int i = 0; i< rGraph->map[u].size(); i++){
+                int elem1 = rGraph->map[u][i].first;
+                if(elem1 == v){
+                    rGraph->map[u][i].second -= path_flow;
+                    break;
+                }
+            }
+            
+            for(unsigned int i = 0; i< rGraph->map[v].size(); i++){
+                int elem2 = rGraph->map[v][i].first;
+                if(elem2 == u){
+                    rGraph->map[v][i].second += path_flow;
+                    break;
+                }
+            }
+            
             
         }
         
@@ -150,7 +186,7 @@ int main(){
     graph->numberPoints = n;
     // sets number of connections of graph
     graph->numberConnections = m;
-
+    
     vector<vector<pair<int, int> > > mapInit(n);
     
     graph->map = mapInit;
