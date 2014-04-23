@@ -19,14 +19,6 @@
 
 using namespace std;
 
-class UserNode{
-public:
-    // node id
-    int id;
-    // List with the connections nodes
-    vector<int > connectionList;
-};
-
 class CriticalNode{
 public:
     vector<int > input;
@@ -40,41 +32,31 @@ public:
     int numberConnections;
     // number of problems
     int numberProblems;
-    // list of critical points
+    
     vector<CriticalNode*> criticalPoints;
-    // Vector that contais the graph nodes
-    vector<UserNode*> nodesVector;
+    
+    vector<vector<pair<int, int> > > map;
+    
+    
 };
 
 
 Graph* copyGraph(Graph* g, Graph* copy){
     copy->numberPoints = g->numberPoints;
     copy->numberConnections = g->numberConnections;
-    copy->nodesVector.reserve(g->numberPoints);
     
     for(int i = 0; i < g->numberPoints; i++){
         
-        // creates a new node
-        UserNode* node = new UserNode();
+        vector<vector<pair<int, int> > > mapInit(g->numberPoints);
         
-        // add node to the nodesVector of graph
-        copy->nodesVector.push_back(node);
+        copy->map = mapInit;
         
-        // sets the id of node
-        copy->nodesVector[i]->id = g->nodesVector[i]->id;
         
-        copy->nodesVector[i]->connectionList.reserve(g->numberPoints);
-        
-        for(int j = 0; j < g->numberPoints; j++){
-            copy->nodesVector[i]->connectionList.push_back(0);
-        }
-        
-        for (int m = 0; m < g->numberPoints; m++) {
-            copy->nodesVector[i]->connectionList[m] = g->nodesVector[i]->connectionList[m];
+        // for each number of connections
+        for (int j = 0; j < g->numberConnections; j++){
             
+            copy->map[i][j] = g->map[i][j];
         }
-        
-        
     }
     
     return copy;
@@ -95,7 +77,7 @@ bool bfs(Graph* rGraph, int source, int sink, int parent[]){
         q.pop();
         
         for (int v=0; v<rGraph->numberPoints; v++) {
-            if (visited[v]==false && rGraph->nodesVector[u]->connectionList[v]>0) {
+            if (visited[v]==false && rGraph->map[u][v].second>0) {
                 q.push(v);
                 parent[v]=u;
                 visited[v]=true;
@@ -125,13 +107,13 @@ int fordFulkerson(Graph* g, int source, int sink){
         
         for(v=sink; v!=source; v=parent[v]){
             u=parent[v];
-            path_flow=min(path_flow, rGraph->nodesVector[u]->connectionList[v]);
+            path_flow=min(path_flow, rGraph->map[u][v].second);
         }
         
         for(v=sink; v!=source; v=parent[v]){
             u=parent[v];
-            rGraph->nodesVector[u]->connectionList[v] -= path_flow;
-            rGraph->nodesVector[v]->connectionList[u] += path_flow;
+            rGraph->map[u][v].second -= path_flow;
+            rGraph->map[v][u].second += path_flow;
             
         }
         
@@ -168,33 +150,11 @@ int main(){
     graph->numberPoints = n;
     // sets number of connections of graph
     graph->numberConnections = m;
-    // allocates a vector with number of vertices (number of points)
-    graph->nodesVector.reserve(n);
+
+    vector<vector<pair<int, int> > > mapInit(n);
     
+    graph->map = mapInit;
     
-    
-    // initialize each node of the graph
-    for(int i = 0; i < n; i++){
-        
-        int id_aux = i;
-        
-        // creates a new node
-        UserNode* node = new UserNode();
-        
-        // add node to the nodesVector of graph
-        graph->nodesVector.push_back(node);
-        
-        // sets the id of node
-        graph->nodesVector[i]->id = (id_aux);
-        
-        graph->nodesVector[i]->connectionList.reserve(n);
-        
-        for(int j = 0; j < n; j++){
-            graph->nodesVector[i]->connectionList.push_back(0);
-        }
-        
-        
-    }
     
     // for each number of connections
     for (int j = 0; j < m; j++){
@@ -202,9 +162,9 @@ int main(){
         // gets the connection points
         scanf ("%d %d",&u, &v);
         
-        //adds connection point to the connectionList of the node
-        graph->nodesVector[u]->connectionList[v] = 1;
-        graph->nodesVector[v]->connectionList[u] = 1;
+        graph->map[u].push_back(make_pair(v,1));
+        graph->map[v].push_back(make_pair(u,1));
+        
     }
     
     // read the number of problems
